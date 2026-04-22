@@ -1,0 +1,7 @@
+/grpc/grpc/
+/build/*
+# /backend/command_logs/*
+# /backend/checkpoints/*
+# /backend/logs/*
+vscode/
+.vscode/settings.json
