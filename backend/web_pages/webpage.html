@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Web Storage Service</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2em;
+      background-color: #f7f7f7;
+    }
+    h1 {
+      color: #333;
+    }
+    fieldset {
+      border: 1px solid #ccc;
+      padding: 1em;
+      margin-bottom: 1.5em;
+      background: #fff;
+    }
+    legend {
+      font-weight: bold;
+      color: #555;
+    }
+    label {
+      display: block;
+      margin-top: 0.5em;
+    }
+    input[type="text"],
+    input[type="file"],
+    select {
+      width: 100%;
+      padding: 0.5em;
+      margin-top: 0.3em;
+    }
+    input[type="submit"] {
+      padding: 0.5em 1em;
+      margin-top: 1em;
+    }
+    .link-box a {
+      text-decoration: none;
+      color: #0066cc;
+      font-size: 1.1em;
+      margin-right: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Web Storage Service</h1>
+
+  <!-- Upload File Form -->
+  <fieldset>
+    <legend>Upload File</legend>
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+      <label for="folderPath">Folder Path (optional):</label>
+      <input type="text" id="folderPath" name="path" placeholder="e.g., folder/subfolder">
+      <label for="fileInput">Select File:</label>
+      <input type="file" id="fileInput" name="file">
+      <input type="submit" value="Upload">
+    </form>
+  </fieldset>
+
+  <!-- Create Folder Form -->
+  <fieldset>
+    <legend>Create Folder</legend>
+    <form action="/create_folder" method="POST">
+      <label for="createFolderPath">Folder Path:</label>
+      <input type="text" id="createFolderPath" name="path" placeholder="e.g., folder/subfolder">
+      <input type="submit" value="Create Folder">
+    </form>
+  </fieldset>
+
+  <!-- Download Resource Form -->
+  <fieldset>
+    <legend>Download Resource</legend>
+    <form action="/download" method="GET">
+      <label for="downloadPath">Enter File/Folder Path (with folder structure):</label>
+      <input type="text" id="downloadPath" name="path" placeholder="e.g., folder/file.txt">
+      <input type="submit" value="Download">
+    </form>
+  </fieldset>
+
+  <!-- Rename File Form -->
+  <fieldset>
+    <legend>Rename File</legend>
+    <form action="/rename" method="POST">
+      <label for="renameOld">Current File Path:</label>
+      <input type="text" id="renameOld" name="old" placeholder="e.g., folder/file.txt">
+      <label for="renameNew">New File Path:</label>
+      <input type="text" id="renameNew" name="new" placeholder="e.g., folder/newfile.txt">
+      <input type="submit" value="Rename File">
+    </form>
+  </fieldset>
+
+  <!-- Rename Folder Form -->
+  <fieldset>
+    <legend>Rename Folder</legend>
+    <form action="/rename_folder" method="POST">
+      <label for="renameFolderOld">Current Folder Path:</label>
+      <input type="text" id="renameFolderOld" name="old" placeholder="e.g., folder/oldname">
+      <label for="renameFolderNew">New Folder Path:</label>
+      <input type="text" id="renameFolderNew" name="new" placeholder="e.g., folder/newname">
+      <input type="submit" value="Rename Folder">
+    </form>
+  </fieldset>
+
+  <!-- Delete Resource Form -->
+  <fieldset>
+    <legend>Delete File/Folder</legend>
+    <form action="/delete" method="POST">
+      <label for="deletePath">File/Folder Path:</label>
+      <input type="text" id="deletePath" name="path" placeholder="e.g., folder/file.txt or folder/dirname">
+      <input type="submit" value="Delete">
+    </form>
+  </fieldset>
+
+  <!-- Move Resource Form -->
+  <fieldset>
+    <legend>Move File/Folder</legend>
+    <form action="/move" method="POST">
+      <!-- Current resource is selected from the existing index via a dropdown -->
+      <label for="moveSelect">Select Resource to Move:</label>
+      <select id="moveSelect" name="old">
+        <option value="file1.txt">file1.txt</option>
+        <option value="folder/file2.txt">folder/file2.txt</option>
+        <option value="folder/subfolder">folder/subfolder</option>
+        <!-- In a dynamic system, these options are generated from the server's index -->
+      </select>
+      <label for="moveNew">New Destination Path:</label>
+      <input type="text" id="moveNew" name="new" placeholder="e.g., new_folder or new_folder/newname.txt">
+      <input type="submit" value="Move">
+    </form>
+  </fieldset>
+
+  <!-- Link to list all files and folders -->
+  <div class="link-box">
+    <a href="/list">List Files &amp; Folders</a>
+  </div>
+
+</body>
+</html>

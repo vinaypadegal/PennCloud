@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package kvstore;
+
+service KeyValueStore {
+  rpc Put (PutRequest) returns (Reply);
+  rpc Get (GetRequest) returns (GetReply);
+  rpc CPut (CPutRequest) returns (Reply);
+  rpc Delete (DeleteRequest) returns (Reply);
+  rpc ReplicatePut (PutRequest) returns (Reply);
+  rpc ReplicateCPut (CPutRequest) returns (Reply);
+  rpc ReplicateDelete (DeleteRequest) returns (Reply);
+  rpc CopyTablet(CopyTabletRequest) returns (stream TabletChunk);
+  rpc AdminConsole (AdminRequest) returns (AdminResponse);
+}
+
+message PutRequest {
+  string row = 1;
+  string column = 2;
+  bytes value = 3;  // bytes can store string or binary
+}
+
+message GetRequest {
+  string row = 1;
+  string column = 2;
+}
+
+message CPutRequest {
+  string row = 1;
+  string column = 2;
+  bytes current_value = 3;
+  bytes new_value = 4;
+}
+
+message DeleteRequest {
+  string row = 1;
+  string column = 2;
+}
+
+message GetReply {
+  bool success = 1;
+  bytes value = 2;
+}
+
+message Reply {
+  bool success = 1;
+}
+
+message CopyTabletRequest {
+  int32 tablet_id = 1;
+}
+
+message TabletChunk {
+  bytes data = 1;
+}
+
+message AdminRequest {
+  string password = 1;
+  string command = 2;
+}
+
+message AdminResponse {
+  bool success = 1;
+}

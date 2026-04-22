@@ -1,0 +1,337 @@
+ <!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Web Storage Service</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f7f7f7;
+    }
+    h1 {
+      margin-bottom: 0.2em;
+    }
+    .container {
+      background: #fff;
+      padding: 15px 20px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .container h2 {
+      margin-top: 0;
+      color: #444;
+    }
+    label {
+      display: inline-block;
+      width: 130px;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"], textarea {
+      width: 300px;
+      padding: 5px;
+      margin-bottom: 10px;
+      font-family: inherit;
+    }
+    input[type="submit"], button {
+      padding: 8px 14px;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+      background: #eee;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    input[type="submit"]:hover, button:hover {
+      background: #ddd;
+    }
+    #fileList {
+      list-style-type: none;
+      padding-left: 0;
+      margin: 10px 0;
+    }
+    #fileList li {
+      margin-bottom: 5px;
+    }
+    /* Drag-and-Drop Styles */
+    #dropZone {
+      border: 2px dashed #aaa;
+      border-radius: 6px;
+      padding: 20px;
+      text-align: center;
+      color: #666;
+      cursor: pointer;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      transition: background 0.2s ease;
+    }
+    #dropZone.hover {
+      background: #e3e3e3;
+    }
+    .info {
+      font-size: 0.9em;
+      color: #777;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Web Storage Service</h1>
+  <p class="info">
+  </p>
+
+  <!-- UPLOAD SECTION -->
+  <div class="container">
+    <h2>Upload File (Drag & Drop or Browse)</h2>
+
+    <!-- 
+      For direct POST, your server expects a request to /upload?row=XYZ&filename=ABC
+      with the file content in the body.
+    -->
+    <div>
+      <label for="uploadRow">Row:</label>
+      <input type="text" id="uploadRow" value="user">
+    </div>
+    <div>
+      <label for="uploadFilename">Filename:</label>
+      <input type="text" id="uploadFilename" value="uploaded_file">
+    </div>
+
+    <!-- Hidden file input for browsing -->
+    <input type="file" id="fileInput" style="display:none" />
+
+    <!-- Drag-and-drop area -->
+    <div id="dropZone">Drag &amp; Drop File Here or Click to Browse</div>
+
+    <!-- Button to actually upload (triggered after file is selected/dropped) -->
+    <button onclick="uploadFile()">Upload File</button>
+    <p class="info">The selected file’s content will be read as text and sent to the server.</p>
+  </div>
+
+  <!-- LIST SECTION -->
+  <div class="container">
+    <h2>List Files</h2>
+    <label for="listRow">Row:</label>
+    <input type="text" id="listRow" value="user">
+    <button onclick="listFiles()">List Files</button>
+
+    <ul id="fileList"></ul> <!-- Populated via JavaScript -->
+  </div>
+
+  <!-- DOWNLOAD SECTION -->
+  <div class="container">
+    <h2>Download File</h2>
+    <label for="downloadRow">Row:</label>
+    <input type="text" id="downloadRow" value="user"><br>
+    
+    <label for="downloadFilename">Filename:</label>
+    <input type="text" id="downloadFilename" value="uploaded_file"><br>
+    
+    <form id="downloadForm" method="GET" action="/download">
+      <!-- We mirror the inputs in hidden fields for a standard GET request -->
+      <input type="hidden" name="row" id="downloadFormRow">
+      <input type="hidden" name="filename" id="downloadFormFilename">
+      <input type="submit" value="Download">
+    </form>
+  </div>
+
+  <!-- JavaScript for drag-and-drop and listing -->
+  <script>
+    // --- Drag & Drop Setup ---
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    let selectedFile = null; // Store the chosen/dropped file
+
+    // Show a hover style when dragging over
+    dropZone.addEventListener("dragenter", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("hover");
+    });
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("hover");
+    });
+    dropZone.addEventListener("dragleave", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("hover");
+    });
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("hover");
+
+      // If a file is dropped, store it in selectedFile
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        selectedFile = e.dataTransfer.files[0];
+        console.log("Dropped file:", selectedFile.name);
+      }
+    });
+
+    // Clicking the dropZone opens the file browser
+    dropZone.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    // When a file is chosen via the browser
+    fileInput.addEventListener("change", (e) => {
+      if (fileInput.files.length > 0) {
+        selectedFile = fileInput.files[0];
+        console.log("Selected file:", selectedFile.name);
+      }
+    });
+
+    // --- Upload the file to the server ---
+    async function uploadFile() {
+      const rowValue = document.getElementById("uploadRow").value.trim();
+      const filenameValue = document.getElementById("uploadFilename").value.trim();
+      
+      if (!rowValue || !filenameValue) {
+        alert("Please fill in both Row and Filename.");
+        return;
+      }
+      if (!selectedFile) {
+        alert("No file selected or dropped.");
+        return;
+      }
+
+      // Read the file as text (for minimal compatibility with your server)
+      const fileContent = await readFileAsText(selectedFile);
+
+      // Build the query string: e.g. /upload?row=user&filename=uploaded_file
+      const url = `/upload?row=${encodeURIComponent(rowValue)}&filename=${encodeURIComponent(filenameValue)}`;
+      
+      // POST the file content as plain text
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          body: fileContent
+        });
+        const resultText = await response.text();
+        // Show the result (HTML from server) in a new window or alert
+        const newWin = window.open("", "_blank", "width=600,height=400");
+        if (newWin) {
+          newWin.document.write(resultText);
+        } else {
+          alert("Upload response:\n" + resultText);
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+        alert("Failed to upload file. See console for details.");
+      }
+    }
+
+    // Helper to read file as text
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+    }
+
+    // --- List Files ---
+    async function listFiles() {
+      const rowValue = document.getElementById("listRow").value.trim();
+      if (!rowValue) {
+        alert("Please enter a row name.");
+        return;
+      }
+      const fileListEl = document.getElementById("fileList");
+      fileListEl.innerHTML = "";
+
+      try {
+        const response = await fetch(`/list?row=${encodeURIComponent(rowValue)}`);
+        if (!response.ok) {
+          fileListEl.innerHTML = "<li style='color:red'>Error listing files (server returned non-OK).</li>";
+          return;
+        }
+        const text = await response.text();
+        if (text.startsWith("+OK")) {
+          // e.g. "+OK file1,file2\r\n"
+          let files = text.substring(3).trim(); 
+          files = files.replace(/\r?\n$/, "");
+          if (files.length > 0) {
+            const fileArray = files.split(",");
+            fileArray.forEach(fname => {
+              const li = document.createElement("li");
+              const link = document.createElement("a");
+              link.href = `/download?row=${encodeURIComponent(rowValue)}&filename=${encodeURIComponent(fname)}`;
+              link.textContent = fname;
+              li.appendChild(link);
+              fileListEl.appendChild(li);
+            });
+          } else {
+            fileListEl.innerHTML = "<li>No files found.</li>";
+          }
+        } else {
+          fileListEl.innerHTML = `<li style='color:red'>${text}</li>`;
+        }
+      } catch (err) {
+        console.error("Error fetching file list:", err);
+        fileListEl.innerHTML = "<li style='color:red'>Network/Server error listing files.</li>";
+      }
+    }
+
+    // --- Download Form Setup ---
+    // We keep a separate form that does a normal GET to /download?row=..&filename=..
+    const downloadForm = document.getElementById("downloadForm");
+    downloadForm.addEventListener("submit", (e) => {
+      const rowVal = document.getElementById("downloadRow").value.trim();
+      const fileVal = document.getElementById("downloadFilename").value.trim();
+      document.getElementById("downloadFormRow").value = rowVal;
+      document.getElementById("downloadFormFilename").value = fileVal;
+      // The form then proceeds with a GET /download?row=rowVal&filename=fileVal
+      // per the hidden inputs
+    });
+  </script>
+</body>
+</html>
+
+
+new:
+ <!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Minimal Web Storage</title>
+</head>
+<body>
+  <h1>Minimal Web Storage</h1>
+
+  <!-- Upload Form -->
+  <h2>Upload File</h2>
+  <!-- 
+       The form uses multipart/form-data (standard for file uploads).
+       Here, the filename is also provided via a text field.
+       (For a minimal solution, the server will simply read the entire request body as the file content.)
+  -->
+  <form method="POST" action="/upload?filename=myfile" enctype="multipart/form-data">
+    <p>
+      <label for="file">Choose file:</label>
+      <input type="file" id="file" name="file">
+    </p>
+    <p>
+      <input type="submit" value="Upload">
+    </p>
+  </form>
+
+  <!-- Download Form -->
+  <h2>Download File</h2>
+  <form method="GET" action="/download">
+    <p>
+      <label for="downloadFile">Filename:</label>
+      <input type="text" id="downloadFile" name="filename" value="myfile">
+    </p>
+    <p>
+      <input type="submit" value="Download">
+    </p>
+  </form>
+</body>
+</html>   
+
+        

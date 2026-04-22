@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package master;
+
+service MasterService {
+  rpc Lookup (LookupRequest) returns (LookupResponse);
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+  rpc WorkerLookup (WorkerLookupRequest) returns (WorkerLookupResponse);
+  rpc Alive (AliveRequest) returns (AliveResponse);
+}
+
+message LookupRequest {
+  string key = 1;
+}
+
+message LookupResponse {
+  string worker = 2;
+}
+
+message HeartbeatRequest {
+  int32 worker_id = 1;
+  int64 timestamp = 2;
+}
+
+message HeartbeatResponse {
+  bool ack = 1;
+}
+
+message WorkerLookupRequest {
+  int32 worker_id = 1;
+}
+
+message WorkerLookupResponse {
+  string primary = 1;
+  string secondary = 2;
+  string tertiary = 3;
+}
+
+message AliveRequest {
+  int32 worker_id = 1;
+}
+
+message AliveResponse {
+  bool alive = 1;
+}
